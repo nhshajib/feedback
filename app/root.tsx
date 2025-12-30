@@ -22,8 +22,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   const envError = validateEnvironment();
   if (envError) return envError;
 
-  // Return empty object for successful validation
-  return {};
+  // Explicitly return an HTTP 200 OK response so that server adapters
+  // (including Lambda integrations) always see a valid status code.
+  return new Response(null, { status: 200 });
 }
 
 export const links: Route.LinksFunction = () => [
