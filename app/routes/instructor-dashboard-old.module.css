@@ -1,0 +1,296 @@
+.container {
+  min-height: 100vh;
+  padding: var(--space-6) var(--space-4);
+  background: linear-gradient(to bottom, var(--color-neutral-2), var(--color-neutral-1));
+}
+
+.header {
+  max-width: 1200px;
+  margin: 0 auto var(--space-8);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-accent-9);
+  text-decoration: none;
+  margin-bottom: var(--space-4);
+  transition: color 0.2s ease;
+}
+
+.backLink:hover {
+  color: var(--color-accent-10);
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-neutral-12);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.subtitle {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  color: var(--color-neutral-10);
+  margin: 0;
+}
+
+/* Filter Cards */
+.filterCard {
+  max-width: 1200px;
+  margin: 0 auto var(--space-6);
+  padding: var(--space-6);
+}
+
+.filterTitle {
+  font-family: var(--font-subheading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-neutral-12);
+  margin: 0 0 var(--space-4) 0;
+}
+
+/* Section Grid */
+.sectionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-4);
+}
+
+.sectionButton {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-neutral-3);
+  border: 2px solid var(--color-neutral-6);
+  border-radius: var(--radius-2);
+  color: var(--color-neutral-11);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sectionButton:hover {
+  background: var(--color-neutral-4);
+  border-color: var(--color-accent-7);
+}
+
+.sectionButton.active {
+  background: var(--color-accent-3);
+  border-color: var(--color-accent-9);
+  color: var(--color-accent-11);
+  font-weight: 600;
+}
+
+/* Speech Type Grid */
+.speechTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.speechTypeButton {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-neutral-3);
+  border: 2px solid var(--color-neutral-6);
+  border-radius: var(--radius-2);
+  color: var(--color-neutral-11);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.speechTypeButton:hover {
+  background: var(--color-neutral-4);
+  border-color: var(--color-accent-7);
+}
+
+.speechTypeButton.active {
+  background: var(--color-accent-3);
+  border-color: var(--color-accent-9);
+  color: var(--color-accent-11);
+  font-weight: 600;
+}
+
+/* Results Section */
+.resultsSection {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.resultsHeader {
+  margin-bottom: var(--space-6);
+  padding: 0 var(--space-2);
+}
+
+.resultsTitle {
+  font-family: var(--font-subheading);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-neutral-12);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.resultsCount {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-neutral-10);
+  margin: 0;
+}
+
+/* Loading and Empty States */
+.loadingCard,
+.emptyCard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.emptyMessage {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  color: var(--color-neutral-10);
+  margin: 0;
+}
+
+/* Feedback Grid */
+.feedbackGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: var(--space-6);
+}
+
+.feedbackCard {
+  padding: var(--space-6);
+  border: 1px solid var(--color-neutral-6);
+  transition: box-shadow 0.2s ease;
+}
+
+.feedbackCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cardHeader {
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-neutral-5);
+}
+
+.presenterName {
+  font-family: var(--font-subheading);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-neutral-12);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.submissionDate {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-neutral-9);
+  margin: 0;
+}
+
+/* Ratings Section */
+.ratingsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.ratingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+}
+
+.ratingLabel {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-neutral-11);
+}
+
+.ratingValue {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-accent-10);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-accent-2);
+  border-radius: var(--radius-1);
+}
+
+/* Comments Section */
+.commentsSection {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-neutral-5);
+}
+
+.commentsLabel {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-neutral-11);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.commentsText {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--color-neutral-10);
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .title {
+    font-size: 2rem;
+  }
+
+  .sectionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .speechTypeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .feedbackGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .filterCard {
+    padding: var(--space-5);
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .filterCard {
+    padding: var(--space-4);
+  }
+
+  .feedbackCard {
+    padding: var(--space-5);
+  }
+}

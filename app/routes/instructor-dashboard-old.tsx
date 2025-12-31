@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { Card } from '~/components/ui/card/card';
+import { Button } from '~/components/ui/button/button';
 import { ArrowLeft } from 'lucide-react';
 import { supabase, type FeedbackSubmission } from '~/lib/supabase';
 import styles from './instructor-dashboard.module.css';

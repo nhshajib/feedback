@@ -1,42 +1,58 @@
 import { Link } from "react-router";
-import { Button } from "~/components/ui/button/button";
+import { MessageSquare, BarChart3 } from "lucide-react";
 import styles from "./home.module.css";
 
 export default function Home() {
   return (
     <div className={styles.container}>
       <div className={styles.hero}>
-        <h1 className={styles.title}>Speech Feedback Portal</h1>
-        <p className={styles.subtitle}>
-          Submit and view anonymous peer feedback for public speaking presentations
-        </p>
-        
-        <div className={styles.actions}>
-          <Link to="/login">
-            <Button size="lg">Student Login</Button>
-          </Link>
-          <Link to="/create-account">
-            <Button size="lg" variant="outline">Create Account</Button>
-          </Link>
-          <Link to="/instructor-dashboard">
-            <Button size="lg" variant="outline">Instructor Dashboard</Button>
-          </Link>
+        <div className={styles.heroContent}>
+          <h1 className={styles.title}>Public Speaking Peer Feedback</h1>
+          <p className={styles.subtitle}>
+            Share thoughtful feedback. Learn from your peers. Improve your speaking.
+          </p>
         </div>
       </div>
 
-      <div className={styles.features}>
-        <div className={styles.feature}>
-          <h3>Submit Feedback</h3>
-          <p>Provide constructive anonymous feedback on your peers' speeches</p>
-        </div>
-        <div className={styles.feature}>
-          <h3>View Feedback</h3>
-          <p>See anonymous feedback from your classmates to improve your skills</p>
-        </div>
-        <div className={styles.feature}>
-          <h3>Track Progress</h3>
-          <p>Monitor your participation and growth throughout the course</p>
-        </div>
+      <div className={styles.cardsContainer}>
+        <Link to="/submit-feedback" className={styles.cardLink}>
+          <div className={styles.card}>
+            <div className={styles.cardIcon}>
+              <MessageSquare size={48} strokeWidth={1.5} />
+            </div>
+            <h2 className={styles.cardTitle}>Submit Feedback</h2>
+            <p className={styles.cardDescription}>
+              Provide constructive feedback for your classmates' speeches.
+            </p>
+            <div className={styles.cardButton}>
+              Submit Feedback
+            </div>
+          </div>
+        </Link>
+
+        <Link to="/view-feedback" className={styles.cardLink}>
+          <div className={styles.card}>
+            <div className={styles.cardIcon}>
+              <BarChart3 size={48} strokeWidth={1.5} />
+            </div>
+            <h2 className={styles.cardTitle}>View Feedback</h2>
+            <p className={styles.cardDescription}>
+              See anonymous peer feedback on presentations.
+            </p>
+            <div className={styles.cardButton}>
+              View Feedback
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      <div className={styles.footer}>
+        <p className={styles.footerText}>
+          All feedback is anonymous. Please be respectful and constructive.
+        </p>
+        <Link to="/instructor" className={styles.instructorLink}>
+          Instructor Dashboard
+        </Link>
       </div>
     </div>
   );

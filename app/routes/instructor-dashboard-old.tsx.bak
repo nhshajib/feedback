@@ -1,0 +1,690 @@
+import { useState } from 'react';
+import { Form, useActionData } from 'react-router';
+import type {
+  SortField,
+  SortOrder,
+  SummarySortField,
+  SummarySortOrder,
+  StudentFeedbackSummary,
+} from '~/services/instructor.service';
+import type { PeerFeedback } from '~/lib/supabase';
+import { Card } from '~/components/ui/card/card';
+import { Button } from '~/components/ui/button/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '~/components/ui/alert-dialog/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select/select';
+import { ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
+import styles from './instructor-dashboard.module.css';
+import { ALL_OPTION_VALUE } from './instructor-dashboard.config';
+
+// Re-export server handlers from the server-only module
+// This keeps server-only code out of the client bundle in SPA mode
+export { loader, action } from './.server/instructor-dashboard';
+
+export default function InstructorDashboard(props: { loaderData?: any }) {
+  const actionData = useActionData();
+  const loaderData = props.loaderData ?? {
+    authenticated: false,
+    feedback: [],
+    sections: [],
+    studentNames: [],
+    speechTypes: [],
+    summary: [],
+    filters: {},
+    sorting: {},
+    summarySorting: {},
+    devPasswordHint: undefined,
+  };
+  const [password, setPassword] = useState('');
+  const [localSortBy, setLocalSortBy] = useState<SortField | undefined>(loaderData.sorting?.sortBy);
+  const [localSortOrder, setLocalSortOrder] = useState<SortOrder>(loaderData.sorting?.sortOrder || 'desc');
+  const [summarySortBy, setSummarySortBy] = useState<SummarySortField | undefined>(loaderData.summarySorting?.sortBy);
+  const [summarySortOrder, setSummarySortOrder] = useState<SummarySortOrder>(loaderData.summarySorting?.sortOrder || 'desc');
+  const [releaseSection, setReleaseSection] = useState<string>('');
+  const [releaseSpeechType, setReleaseSpeechType] = useState<string>('');
+  const [unreleaseSection, setUnreleaseSection] = useState<string>('');
+  const [unreleaseSpeechType, setUnreleaseSpeechType] = useState<string>('');
+  const toSelectValue = (value?: string) => (value && value.length > 0 ? value : ALL_OPTION_VALUE);
+  const fromSelectValue = (value: string) => (value === ALL_OPTION_VALUE ? '' : value);
+
+  if (!loaderData.authenticated) {
+    return (
+      <div className={styles.loginContainer}>
+        <Card className={styles.loginCard}>
+          <h1>Instructor Dashboard</h1>
+          <p>Please enter the instructor password to access the dashboard.</p>
+
+          {loaderData.devPasswordHint && (
+            <p className={styles.devPasswordHint}>
+              Development password: <span>{loaderData.devPasswordHint}</span>
+            </p>
+          )}
+          
+          <Form method="post" className={styles.loginForm}>
+            <input type="hidden" name="intent" value="login" />
+            <div className={styles.inputGroup}>
+              <label htmlFor="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+            {actionData?.error && (
+              <p className={styles.error}>{actionData.error}</p>
+            )}
+            <Button type="submit">Access Dashboard</Button>
+          </Form>
+        </Card>
+      </div>
+    );
+  }
+
+  const handleSort = (field: SortField) => {
+    const newOrder = localSortBy === field && localSortOrder === 'asc' ? 'desc' : 'asc';
+    setLocalSortBy(field);
+    setLocalSortOrder(newOrder);
+    
+    // Update URL with new sorting
+    const url = new URL(window.location.href);
+    url.searchParams.set('sortBy', field);
+    url.searchParams.set('sortOrder', newOrder);
+    window.location.href = url.toString();
+  };
+
+  const handleSummarySort = (field: SummarySortField) => {
+    const newOrder = summarySortBy === field && summarySortOrder === 'asc' ? 'desc' : 'asc';
+    setSummarySortBy(field);
+    setSummarySortOrder(newOrder);
+    
+    // Update URL with new sorting
+    const url = new URL(window.location.href);
+    url.searchParams.set('summarySortBy', field);
+    url.searchParams.set('summarySortOrder', newOrder);
+    window.location.href = url.toString();
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (localSortBy !== field) {
+      return <ArrowUpDown size={16} />;
+    }
+    return localSortOrder === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />;
+  };
+
+  const getSummarySortIcon = (field: SummarySortField) => {
+    if (summarySortBy !== field) {
+      return <ArrowUpDown size={16} />;
+    }
+    return summarySortOrder === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const exportSummaryToCSV = () => {
+    // CSV headers in exact order requested
+    const headers = [
+      'student_name',
+      'section',
+      'total_feedback_count',
+      'participation_score'
+    ];
+    
+    // CSV rows
+    const rows = (loaderData.summary || []).map((record: StudentFeedbackSummary) => [
+      record.student_name,
+      record.section,
+      record.total_feedback_count.toString(),
+      record.participation_score.toString()
+    ]);
+    
+    // Escape CSV fields (handle commas, quotes, newlines)
+    const escapeCSVField = (field: string) => {
+      if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+        return `"${field.replace(/"/g, '""')}"`;
+      }
+      return field;
+    };
+    
+    // Build CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row: string[]) => row.map(escapeCSVField).join(','))
+    ].join('\n');
+    
+    // Create download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `student_feedback_summary_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToCSV = () => {
+    // CSV headers
+    const headers = [
+      'Student Name', 'Section', 'Presenter Name', 'Speech Type',
+      'Preparation', 'Nonverbals', 'Clarity', 'Interest', 'Dynamism',
+      'Additional Comments', 'Submitted At'
+    ];
+    
+    // CSV rows
+    const rows = loaderData.feedback.map((record: PeerFeedback) => [
+      record.student_name,
+      record.section,
+      record.presenter_name,
+      record.speech_type,
+      record.preparation,
+      record.nonverbals,
+      record.clarity,
+      record.interest,
+      record.dynamism,
+      record.additional_comments || '',
+      record.created_at ? new Date(record.created_at).toLocaleString('en-US') : 'N/A'
+    ]);
+    
+    // Escape CSV fields (handle commas, quotes, newlines)
+    const escapeCSVField = (field: string) => {
+      if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+        return `"${field.replace(/"/g, '""')}"`;
+      }
+      return field;
+    };
+    
+    // Build CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row: string[]) => row.map(escapeCSVField).join(','))
+    ].join('\n');
+    
+    // Create download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filterSuffix = loaderData.filters?.section ? `_${loaderData.filters.section}` : '';
+    link.setAttribute('href', url);
+    link.setAttribute('download', `feedback_export_${timestamp}${filterSuffix}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1>Instructor Dashboard</h1>
+        <Form method="post">
+          <input type="hidden" name="intent" value="logout" />
+          <Button type="submit" variant="outline">Logout</Button>
+        </Form>
+      </div>
+
+      {loaderData.error && (
+        <div className={styles.error}>{loaderData.error}</div>
+      )}
+
+      <Card className={styles.filtersCard}>
+        <h2>Filters</h2>
+        <Form method="get" className={styles.filters}>
+          <div className={styles.filterGroup}>
+            <label htmlFor="section">Section</label>
+            <Select name="section" defaultValue={toSelectValue(loaderData.filters?.section)}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Sections" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_OPTION_VALUE}>All Sections</SelectItem>
+                {loaderData.sections.map((section: string) => (
+                  <SelectItem key={section} value={section}>
+                    {section}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <label htmlFor="studentName">Student Name</label>
+            <Select name="studentName" defaultValue={toSelectValue(loaderData.filters?.studentName)}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Students" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_OPTION_VALUE}>All Students</SelectItem>
+                {loaderData.studentNames.map((name: string) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <label htmlFor="speechType">Speech Type</label>
+            <Select name="speechType" defaultValue={toSelectValue(loaderData.filters?.speechType)}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Speech Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_OPTION_VALUE}>All Speech Types</SelectItem>
+                {loaderData.speechTypes.map((type: string) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <input type="hidden" name="sortBy" value={localSortBy || ''} />
+          <input type="hidden" name="sortOrder" value={localSortOrder} />
+
+          <div className={styles.filterActions}>
+            <Button type="submit">Apply Filters</Button>
+            <Button type="button" variant="outline" onClick={() => window.location.href = '/instructor-dashboard'}>
+              Clear Filters
+            </Button>
+          </div>
+        </Form>
+      </Card>
+
+      <Card className={styles.releaseCard}>
+        <h2>Feedback Release Control</h2>
+        <p className={styles.releaseDescription}>
+          Control which feedback is visible to students. Students can only see feedback that has been released.
+        </p>
+
+        {actionData?.success && (
+          <div className={styles.successMessage}>{actionData.success}</div>
+        )}
+        {actionData?.error && (
+          <div className={styles.errorMessage}>{actionData.error}</div>
+        )}
+
+        <div className={styles.releaseActions}>
+          <div className={styles.releaseSection}>
+            <h3>Release Feedback</h3>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" className={styles.releaseButton}>
+                  Release Feedback
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirm Release</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will make feedback visible to students. This action cannot be undone without manually unreleasing.
+                    {releaseSection && ` Section: ${releaseSection}.`}
+                    {releaseSpeechType && ` Speech Type: ${releaseSpeechType}.`}
+                    {!releaseSection && !releaseSpeechType && ' All feedback will be released.'}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <Form method="post" style={{ display: 'contents' }}>
+                    <input type="hidden" name="intent" value="releaseFeedback" />
+                    <input type="hidden" name="releaseSection" value={releaseSection} />
+                    <input type="hidden" name="releaseSpeechType" value={releaseSpeechType} />
+                    <AlertDialogAction type="submit">Release</AlertDialogAction>
+                  </Form>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Form method="post" className={styles.releaseForm} style={{ display: 'none' }}>
+              <input type="hidden" name="intent" value="releaseFeedback" />
+              
+              <div className={styles.releaseFilters}>
+                <div className={styles.filterGroup}>
+                  <label htmlFor="releaseSection">Section (Optional)</label>
+                  <Select 
+                    name="releaseSection" 
+                    value={toSelectValue(releaseSection)}
+                    onValueChange={(value) => setReleaseSection(fromSelectValue(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Sections" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_OPTION_VALUE}>All Sections</SelectItem>
+                      {loaderData.sections.map((section: string) => (
+                        <SelectItem key={section} value={section}>
+                          {section}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className={styles.filterGroup}>
+                  <label htmlFor="releaseSpeechType">Speech Type (Optional)</label>
+                  <Select 
+                    name="releaseSpeechType"
+                    value={toSelectValue(releaseSpeechType)}
+                    onValueChange={(value) => setReleaseSpeechType(fromSelectValue(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Speech Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_OPTION_VALUE}>All Speech Types</SelectItem>
+                      {loaderData.speechTypes.map((type: string) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </Form>
+          </div>
+
+          <div className={styles.releaseSection}>
+            <h3>Unrelease Feedback</h3>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="outline" className={styles.unreleaseButton}>
+                  Unrelease Feedback
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirm Unrelease</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will hide feedback from students. This action cannot be undone without manually releasing again.
+                    {unreleaseSection && ` Section: ${unreleaseSection}.`}
+                    {unreleaseSpeechType && ` Speech Type: ${unreleaseSpeechType}.`}
+                    {!unreleaseSection && !unreleaseSpeechType && ' All feedback will be unreleased.'}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <Form method="post" style={{ display: 'contents' }}>
+                    <input type="hidden" name="intent" value="unreleaseFeedback" />
+                    <input type="hidden" name="unreleaseSection" value={unreleaseSection} />
+                    <input type="hidden" name="unreleaseSpeechType" value={unreleaseSpeechType} />
+                    <AlertDialogAction type="submit">Unrelease</AlertDialogAction>
+                  </Form>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Form method="post" className={styles.releaseForm} style={{ display: 'none' }}>
+              <input type="hidden" name="intent" value="unreleaseFeedback" />
+              
+              <div className={styles.releaseFilters}>
+                <div className={styles.filterGroup}>
+                  <label htmlFor="unreleaseSection">Section (Optional)</label>
+                  <Select 
+                    name="unreleaseSection"
+                    value={toSelectValue(unreleaseSection)}
+                    onValueChange={(value) => setUnreleaseSection(fromSelectValue(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Sections" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_OPTION_VALUE}>All Sections</SelectItem>
+                      {loaderData.sections.map((section: string) => (
+                        <SelectItem key={section} value={section}>
+                          {section}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className={styles.filterGroup}>
+                  <label htmlFor="unreleaseSpeechType">Speech Type (Optional)</label>
+                  <Select 
+                    name="unreleaseSpeechType"
+                    value={toSelectValue(unreleaseSpeechType)}
+                    onValueChange={(value) => setUnreleaseSpeechType(fromSelectValue(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Speech Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_OPTION_VALUE}>All Speech Types</SelectItem>
+                      {loaderData.speechTypes.map((type: string) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </Form>
+          </div>
+        </div>
+
+        <div className={styles.normalizationSection}>
+          <h3>Data Normalization</h3>
+          <p className={styles.normalizationDescription}>
+            Run a one-time normalization to clean up existing presenter names (trim spaces, collapse multiple spaces, convert to Title Case).
+          </p>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button type="button" variant="outline">
+                Normalize Presenter Names
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirm Normalization</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will update all existing presenter names to a standardized format (trimmed, single spaces, Title Case). This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <Form method="post" style={{ display: 'contents' }}>
+                  <input type="hidden" name="intent" value="normalizePresenterNames" />
+                  <AlertDialogAction type="submit">Normalize</AlertDialogAction>
+                </Form>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </Card>
+
+      <Card className={styles.tableCard}>
+        <div className={styles.tableHeader}>
+          <div>
+            <h2>Student Feedback Summary</h2>
+            <p className={styles.recordCount}>
+              {loaderData.summary?.length || 0} unique student-section {loaderData.summary?.length === 1 ? 'combination' : 'combinations'}
+            </p>
+          </div>
+          <Button 
+            type="button" 
+            onClick={exportSummaryToCSV}
+            disabled={!loaderData.summary || loaderData.summary.length === 0}
+            className={styles.exportButton}
+          >
+            <Download size={16} />
+            Export to CSV
+          </Button>
+        </div>
+
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Student Name</th>
+                <th>Section</th>
+                <th>
+                  <button
+                    type="button"
+                    onClick={() => handleSummarySort('total_feedback_count')}
+                    className={styles.sortButton}
+                  >
+                    Total Feedback Count {getSummarySortIcon('total_feedback_count')}
+                  </button>
+                </th>
+                <th>Participation Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!loaderData.summary || loaderData.summary.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className={styles.emptyState}>
+                    No summary data available
+                  </td>
+                </tr>
+              ) : (
+                loaderData.summary.map((record: StudentFeedbackSummary, index: number) => (
+                  <tr key={`${record.student_name}-${record.section}-${index}`}>
+                    <td>{record.student_name}</td>
+                    <td>{record.section}</td>
+                    <td className={styles.countCell}>{record.total_feedback_count}</td>
+                    <td className={styles.scoreCell}>{record.participation_score}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <Card className={styles.tableCard}>
+        <div className={styles.tableHeader}>
+          <div>
+            <h2>Feedback Records</h2>
+            <p className={styles.recordCount}>
+              {loaderData.feedback.length} {loaderData.feedback.length === 1 ? 'record' : 'records'}
+            </p>
+          </div>
+          <div className={styles.tableActions} style={{ display: 'flex', gap: '8px' }}>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  Delete All Feedback
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This cannot be undone. This will permanently delete all feedback records from the database.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <Form method="post" style={{ display: 'contents' }}>
+                    <input type="hidden" name="intent" value="deleteAllFeedback" />
+                    <AlertDialogAction type="submit">Delete All</AlertDialogAction>
+                  </Form>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button 
+              type="button" 
+              onClick={exportToCSV}
+              disabled={loaderData.feedback.length === 0}
+              className={styles.exportButton}
+            >
+              <Download size={16} />
+              Export to CSV
+            </Button>
+          </div>
+        </div>
+
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>
+                  <button
+                    type="button"
+                    onClick={() => handleSort('student_name')}
+                    className={styles.sortButton}
+                  >
+                    Student Name {getSortIcon('student_name')}
+                  </button>
+                </th>
+                <th>Section</th>
+                <th>Presenter</th>
+                <th>Speech Type</th>
+                <th>Preparation</th>
+                <th>Nonverbals</th>
+                <th>Clarity</th>
+                <th>Interest</th>
+                <th>Dynamism</th>
+                <th>Comments</th>
+                <th>
+                  <button
+                    type="button"
+                    onClick={() => handleSort('created_at')}
+                    className={styles.sortButton}
+                  >
+                    Submitted {getSortIcon('created_at')}
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {loaderData.feedback.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className={styles.emptyState}>
+                    No feedback records found
+                  </td>
+                </tr>
+              ) : (
+                loaderData.feedback.map((record: PeerFeedback) => (
+                  <tr key={record.id}>
+                    <td>{record.student_name}</td>
+                    <td>{record.section}</td>
+                    <td>{record.presenter_name}</td>
+                    <td>{record.speech_type}</td>
+                    <td className={styles.ratingCell}>{record.preparation}</td>
+                    <td className={styles.ratingCell}>{record.nonverbals}</td>
+                    <td className={styles.ratingCell}>{record.clarity}</td>
+                    <td className={styles.ratingCell}>{record.interest}</td>
+                    <td className={styles.ratingCell}>{record.dynamism}</td>
+                    <td className={styles.commentsCell}>{record.additional_comments || '—'}</td>
+                    <td>{record.created_at ? formatDate(record.created_at) : 'N/A'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}

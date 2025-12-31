@@ -3,19 +3,43 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--space-6) var(--space-4);
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
   background: linear-gradient(
-    to bottom,
-    var(--color-accent-2),
-    var(--color-neutral-1)
+    135deg,
+    #667eea 0%,
+    #764ba2 50%,
+    #f093fb 100%
   );
+  position: relative;
+  overflow: hidden;
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at 20% 50%,
+    rgba(102, 126, 234, 0.3) 0%,
+    transparent 50%
+  ),
+  radial-gradient(
+    circle at 80% 80%,
+    rgba(240, 147, 251, 0.3) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
 }
 
 /* Hero Section */
 .hero {
   text-align: center;
-  margin-bottom: var(--space-8);
-  max-width: 800px;
+  margin-bottom: var(--space-12);
+  z-index: 1;
 }
 
 .heroContent {
@@ -25,135 +49,173 @@
   gap: var(--space-4);
 }
 
-.heroIcon {
-  width: 80px;
-  height: 80px;
-  color: var(--color-accent-9);
-  margin-bottom: var(--space-2);
-}
-
 .title {
   font-family: var(--font-heading);
-  font-size: 3rem;
+  font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 700;
-  color: var(--color-neutral-12);
+  color: #ffffff;
   margin: 0;
   line-height: 1.2;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+  letter-spacing: -0.02em;
 }
 
 .subtitle {
   font-family: var(--font-body);
-  font-size: 1.25rem;
-  color: var(--color-neutral-11);
-  margin: 0;
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  color: rgba(255, 255, 255, 0.9);
+  margin: var(--space-3) 0 0 0;
   max-width: 600px;
+  line-height: 1.6;
+  font-weight: 400;
 }
 
-/* Actions Grid */
-.actionsGrid {
+/* Cards Container */
+.cardsContainer {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--space-6);
+  max-width: 1000px;
   width: 100%;
-  max-width: 900px;
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-12);
+  z-index: 1;
 }
 
-.actionCard {
+@media (max-width: 768px) {
+  .cardsContainer {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    max-width: 400px;
+  }
+}
+
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 24px;
+  padding: var(--space-8);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  min-height: 320px;
 }
 
-.actionCard:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-3);
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+              0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.card:hover::before {
+  opacity: 1;
 }
 
 .cardIcon {
-  width: 48px;
-  height: 48px;
-  color: var(--color-accent-9);
-  margin-bottom: var(--space-3);
+  color: #ffffff;
+  margin-bottom: var(--space-5);
+  transition: transform 0.3s ease;
 }
 
-.actionButton {
-  width: 100%;
+.card:hover .cardIcon {
+  transform: scale(1.1);
+}
+
+.cardTitle {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 var(--space-3) 0;
+  letter-spacing: -0.01em;
+}
+
+.cardDescription {
+  font-family: var(--font-body);
   font-size: 1rem;
-  padding: var(--space-3) var(--space-5);
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  margin: 0 0 var(--space-6) 0;
+  flex-grow: 1;
+}
+
+.cardButton {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  color: #667eea;
+  background: #ffffff;
+  padding: var(--space-3) var(--space-6);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card:hover .cardButton {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 /* Footer */
 .footer {
+  z-index: 1;
   margin-top: auto;
-  padding-top: var(--space-8);
-  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.footerText {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
   text-align: center;
 }
 
-.footerNote {
+.instructorLink {
   font-family: var(--font-body);
-  font-size: 0.95rem;
-  color: var(--color-neutral-10);
-  line-height: 1.6;
-  margin: 0;
-  padding: var(--space-4);
-  background: var(--color-neutral-2);
-  border-radius: var(--radius-3);
-  border: 1px solid var(--color-neutral-4);
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-1);
+  transition: all 0.2s ease;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .title {
-    font-size: 2rem;
-  }
-
-  .subtitle {
-    font-size: 1rem;
-  }
-
-  .heroIcon {
-    width: 60px;
-    height: 60px;
-  }
-
-  .actionsGrid {
-    grid-template-columns: 1fr;
-    max-width: 500px;
-  }
-
-  .cardIcon {
-    width: 40px;
-    height: 40px;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: var(--space-4) var(--space-3);
-  }
-
-  .title {
-    font-size: 1.75rem;
-  }
-
-  .subtitle {
-    font-size: 0.95rem;
-  }
-
-  .heroIcon {
-    width: 50px;
-    height: 50px;
-  }
-
-  .footer {
-    padding-top: var(--space-6);
-  }
-
-  .footerNote {
-    font-size: 0.875rem;
-  }
+.instructorLink:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
 }

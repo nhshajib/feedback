@@ -1,28 +1,48 @@
-# Welcome to React Router!
+# Peer Feedback System
 
-A modern, production-ready template for building full-stack React applications using React Router.
+A simple, reliable web app for collecting peer feedback in public speaking classes (COMM 1100).
 
 ## Features
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 CSS Modules for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+- **No Authentication Required** - Students submit feedback without creating accounts
+- **Five Rating Dimensions** - Evaluate preparation, nonverbals, clarity, interest, and dynamism
+- **Instructor Dashboard** - View, filter, and export all feedback to CSV
+- **Client-Side Only** - All data stored locally in browser (localStorage)
+- **Simple & Reliable** - No backend servers, no databases, no complexity
 
-### Styling & Theming
+## Core Sections
 
-- This project uses CSS modules as the styling solution, Radix as the component library, and Open Props for styling tokens and theming
-- Project theme is defined in `app/styles/theme.css`, used as a design system for all UI building
-- Base design tokens are defined in `app/styles/tokens/<token-type>.css`, used as an immutable base design system for all the theme and all UI
+### Student Feedback Form (`/submit-feedback`)
+
+Students enter:
+- Full Name (required)
+- Section selection from: COMM 1100-012D, 013D, 014D, 017D (required)
+- Speech Type: Introductory, Informative, Social Activism, or Persuasive (required)
+- Five required ratings (Needs Improvement → Excellent):
+  1. Preparation
+  2. Nonverbals
+  3. Clarity
+  4. Interest
+  5. Dynamism
+- Optional additional comments
+
+### Instructor Dashboard (`/instructor`)
+
+- View all submitted feedback in a sortable table
+- Filter by section, student name, or speech type
+- Export filtered data to CSV
+- Delete all feedback (with confirmation)
+
+## Technical Details
+
+- **Framework**: React Router v7 (SPA mode)
+- **Styling**: CSS Modules + design tokens
+- **Storage**: Browser localStorage (no backend)
+- **TypeScript**: Full type safety throughout
 
 ## Getting Started
 
 ### Installation
-
-Install the dependencies:
 
 ```bash
 npm install
@@ -30,34 +50,30 @@ npm install
 
 ### Development
 
-Start the development server with HMR:
-
 ```bash
 npm run dev
 ```
 
 Your application will be available at `http://localhost:5173`.
 
-## Building for Production
+### Environment Variables
 
-Create a production build:
+None required! This is a pure client-side app.
+
+## Building for Production
 
 ```bash
 npm run build
 ```
 
-## Deployment
+Deploy the `build/client/` directory to any static hosting service (Netlify, Vercel, GitHub Pages, etc.).
 
-### DIY Deployment
+## Important Notes
 
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
+⚠️ **Data Storage**: All feedback is stored in the browser's localStorage. Data:
+- Does NOT sync across devices or browsers
+- Will be lost if browser data is cleared
+- Is limited to ~5-10MB depending on browser
+- Is NOT backed up anywhere
 
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
+For production use with persistent storage, consider migrating to a backend database.

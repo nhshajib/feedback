@@ -1,7 +1,6 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 
 import type { Route } from "./+types/root";
-import { validateEnvironment } from "./lib/session.server";
 import { Toaster } from "./components/ui/toaster/toaster";
 import colorSchemeApi from "@dazl/color-scheme/client?url";
 
@@ -16,16 +15,6 @@ import "./styles/tokens/typography.css";
 import "./styles/theme.css";
 import { useColorScheme } from "@dazl/color-scheme/react";
 import favicon from "/favicon.svg";
-
-export async function loader({ request }: Route.LoaderArgs) {
-  // Validate environment variables for all requests
-  const envError = validateEnvironment();
-  if (envError) return envError;
-
-  // Explicitly return an HTTP 200 OK response so that server adapters
-  // (including Lambda integrations) always see a valid status code.
-  return new Response(null, { status: 200 });
-}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

@@ -1,0 +1,324 @@
+import { useState } from "react";
+import { Link } from "react-router";
+import { Button } from "~/components/ui/button/button";
+import { Label } from "~/components/ui/label/label";
+import { Textarea } from "~/components/ui/textarea/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select/select";
+import { Alert, AlertDescription } from "~/components/ui/alert/alert";
+import { addFeedback, getTodayFeedbackCount, type Rating, type Section, type SpeechType } from "~/lib/storage";
+import styles from "./submit-feedback.module.css";
+
+const SECTIONS: Section[] = [
+  'COMM 1100-012D',
+  'COMM 1100-013D',
+  'COMM 1100-014D',
+  'COMM 1100-017D'
+];
+
+const SPEECH_TYPES: SpeechType[] = [
+  'Introductory Speech',
+  'Informative Speech',
+  'Social Activism Speech',
+  'Persuasive Speech'
+];
+
+const RATING_OPTIONS: Rating[] = [
+  'Needs Improvement',
+  'Fair',
+  'Good',
+  'Very Good',
+  'Excellent'
+];
+
+export default function SubmitFeedback() {
+  const [fullName, setFullName] = useState("");
+  const [section, setSection] = useState<Section | "">("");
+  const [speechType, setSpeechType] = useState<SpeechType>(SPEECH_TYPES[0]);
+  const [preparation, setPreparation] = useState<Rating | ''>('');
+  const [nonverbals, setNonverbals] = useState<Rating | ''>('');
+  const [clarity, setClarity] = useState<Rating | ''>('');
+  const [interest, setInterest] = useState<Rating | ''>('');
+  const [dynamism, setDynamism] = useState<Rating | ''>('');
+  const [comments, setComments] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedbackCount, setFeedbackCount] = useState(0);
+
+  // Update feedback count when name/section changes
+  const updateFeedbackCount = () => {
+    if (fullName && section) {
+      const count = getTodayFeedbackCount(fullName, section as Section);
+      setFeedbackCount(count);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    // Validate required fields
+    if (!fullName.trim()) {
+      setError("Please enter your full name");
+      return;
+    }
+
+    if (!section) {
+      setError("Please select your section");
+      return;
+    }
+
+    if (!preparation || !nonverbals || !clarity || !interest || !dynamism) {
+      setError("Please answer all five evaluation questions before submitting.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const result = addFeedback({
+      fullName: fullName.trim(),
+      section: section as Section,
+      speechType,
+      preparation,
+      nonverbals,
+      clarity,
+      interest,
+      dynamism,
+      comments: comments.trim() || undefined,
+    });
+
+    if (!result.success) {
+      setError("Failed to submit feedback. Please try again.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    setSuccess("Feedback submitted successfully! You may submit another.");
+    
+    // Clear form fields after successful submission
+    setSpeechType(SPEECH_TYPES[0]);
+    setPreparation('');
+    setNonverbals('');
+    setClarity('');
+    setInterest('');
+    setDynamism('');
+    setComments("");
+    setFeedbackCount(prev => prev + 1);
+    setIsSubmitting(false);
+
+    // Scroll to top to see success message
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const isFormValid = fullName.trim() !== '' && 
+                      section !== '' && 
+                      preparation !== '' && 
+                      nonverbals !== '' && 
+                      clarity !== '' && 
+                      interest !== '' && 
+                      dynamism !== '';
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <Link to="/" className={styles.backLink}>← Back to Home</Link>
+        <h1 className={styles.title}>Submit Peer Feedback</h1>
+      </div>
+
+      {feedbackCount > 0 && (
+        <div className={styles.counter}>
+          Feedback submitted today: {feedbackCount}
+        </div>
+      )}
+      
+      {success && (
+        <Alert className={styles.successAlert}>
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
+
+      {error && (
+        <Alert className={styles.errorAlert}>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className={styles.guidanceBox}>
+        <h3>Guidelines for Constructive Feedback</h3>
+        <ul className={styles.guidanceList}>
+          <li>Be specific and constructive in your comments</li>
+          <li>Focus on observable behaviors, not the person</li>
+          <li>Provide feedback you would find helpful yourself</li>
+          <li>Balance positive observations with areas for improvement</li>
+        </ul>
+      </div>
+
+      <form onSubmit={handleSubmit} className={styles.form}>
+        {/* Student Information */}
+        <div className={styles.section}>
+          <h2>Your Information</h2>
+          <div className={styles.formGroup}>
+            <Label htmlFor="fullName">Your Full Name *</Label>
+            <input
+              type="text"
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              onBlur={updateFeedbackCount}
+              className={styles.input}
+              placeholder="Enter your full name"
+              required
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <Label htmlFor="section">Your Section *</Label>
+            <Select value={section} onValueChange={(value) => { setSection(value as Section); setTimeout(updateFeedbackCount, 0); }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select your section" />
+              </SelectTrigger>
+              <SelectContent>
+                {SECTIONS.map((sec) => (
+                  <SelectItem key={sec} value={sec}>
+                    {sec}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={styles.formGroup}>
+            <Label htmlFor="speechType">Speech Type *</Label>
+            <Select value={speechType} onValueChange={(value) => setSpeechType(value as SpeechType)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SPEECH_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Rating Questions */}
+        <div className={styles.section}>
+          <h2>Evaluate the Presentation</h2>
+          <p className={styles.sectionDescription}>
+            Rate each aspect of the speaker's performance. All five ratings are required.
+          </p>
+
+          <div className={styles.ratingGroup}>
+            <Label htmlFor="preparation">1. Preparation – How well prepared was the speaker? *</Label>
+            <Select value={preparation} onValueChange={(value) => setPreparation(value as Rating)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a rating" />
+              </SelectTrigger>
+              <SelectContent>
+                {RATING_OPTIONS.map((rating) => (
+                  <SelectItem key={rating} value={rating}>
+                    {rating}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={styles.ratingGroup}>
+            <Label htmlFor="nonverbals">2. Nonverbals – How effective were the speaker's body language and eye contact? *</Label>
+            <Select value={nonverbals} onValueChange={(value) => setNonverbals(value as Rating)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a rating" />
+              </SelectTrigger>
+              <SelectContent>
+                {RATING_OPTIONS.map((rating) => (
+                  <SelectItem key={rating} value={rating}>
+                    {rating}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={styles.ratingGroup}>
+            <Label htmlFor="clarity">3. Clarity – Was the message clear and easy to understand? *</Label>
+            <Select value={clarity} onValueChange={(value) => setClarity(value as Rating)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a rating" />
+              </SelectTrigger>
+              <SelectContent>
+                {RATING_OPTIONS.map((rating) => (
+                  <SelectItem key={rating} value={rating}>
+                    {rating}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={styles.ratingGroup}>
+            <Label htmlFor="interest">4. Interest – How engaging was the presentation? *</Label>
+            <Select value={interest} onValueChange={(value) => setInterest(value as Rating)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a rating" />
+              </SelectTrigger>
+              <SelectContent>
+                {RATING_OPTIONS.map((rating) => (
+                  <SelectItem key={rating} value={rating}>
+                    {rating}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={styles.ratingGroup}>
+            <Label htmlFor="dynamism">5. Dynamism – Was the delivery energetic and enthusiastic? *</Label>
+            <Select value={dynamism} onValueChange={(value) => setDynamism(value as Rating)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a rating" />
+              </SelectTrigger>
+              <SelectContent>
+                {RATING_OPTIONS.map((rating) => (
+                  <SelectItem key={rating} value={rating}>
+                    {rating}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Additional Comments */}
+        <div className={styles.section}>
+          <h2>Additional Comments</h2>
+          <div className={styles.formGroup}>
+            <Label htmlFor="comments">Optional: Provide specific feedback or suggestions (Optional)</Label>
+            <Textarea
+              id="comments"
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              placeholder="What did the speaker do well? What could be improved?"
+              rows={4}
+              className={styles.textarea}
+            />
+          </div>
+        </div>
+
+        <div className={styles.submitSection}>
+          <Button 
+            type="submit" 
+            disabled={!isFormValid || isSubmitting}
+            size="lg"
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
